@@ -3,7 +3,7 @@ name: Stream Random Movie with Overlay
 on:
   workflow_dispatch:  # Allows manual execution from GitHub Actions
   schedule:
-    - cron: "0 0 * * *"  # Runs every day at midnight UTC
+    - cron: "0 */3 * * *"  # Runs every 3 hours
     
 jobs:
   stream:
