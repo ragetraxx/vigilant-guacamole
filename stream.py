@@ -40,4 +40,4 @@ while True:  # Infinite loop
     os.system(command)
 
     # Short delay before selecting the next video
-    time.sleep(5)
+    time.sleep(3)
