@@ -1,0 +1,16 @@
+videos:
+  source: "movies.json"
+
+overlay:
+  image: "overlay.png"
+  text_position: "top-left"
+
+streaming:
+  server: "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
+  codec:
+    video: "libx264"
+    audio: "aac"
+  quality:
+    video_bitrate: "1500k"
+    audio_bitrate: "128k"
+    resolution: "1280x720"

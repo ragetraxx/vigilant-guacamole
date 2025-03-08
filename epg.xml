@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+    <channel id="RageTV">
+        <display-name>RageTV</display-name>
+    </channel>
+    <programme start="20250307183157 +0000" stop="20250307203157 +0000" channel="RageTV">
+        <title lang="en">(Movie) Star Trek Section 31</title>
+        <desc>Streaming on RageTV</desc>
+        <category>Film Library</category>
+        <icon src="https://image.tmdb.org/t/p/original/sqiCinCzUGlzQiFytS30N1nO3Pt.jpg" />
+        <url>https://gstream.hollymoviehd.cc/streamsvr/LYA86sLPwg/0-4</url>
+    </programme>
+</tv>
