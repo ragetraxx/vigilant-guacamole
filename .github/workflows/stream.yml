@@ -1,0 +1,27 @@
+name: Stream Random Movie with Overlay
+
+on:
+  workflow_dispatch:  # Allows manual execution from GitHub Actions
+  schedule:
+    - cron: "0 * * * *"  # Runs every hour (adjust as needed)
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 0  # Prevent timeout
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg jq python3 python3-pip
+
+      - name: Install Python Packages
+        run: pip install -r requirements.txt
+
+      - name: Run Streaming Script
+        run: |
+          while true; do
+            python3 stream.py
+          done
