@@ -14,18 +14,16 @@ while True:  # Infinite loop
     with open("movies.json", "r") as file:
         movies = json.load(file)
 
-    # Ensure movies is a list
-    if not isinstance(movies, list):
-        raise ValueError("Invalid JSON format: Expected a list of movies.")
+    # Filter out invalid entries
+    valid_movies = [m for m in movies if "url" in m and "title" in m]
+
+    if not valid_movies:
+        raise ValueError("No valid movies found in JSON file.")
 
     # Select a random movie
-    movie = random.choice(movies)
+    movie = random.choice(valid_movies)
 
-    # Ensure required keys exist
-    if "url" not in movie or "title" not in movie:
-        raise ValueError("Invalid movie format: Each movie must have 'url' and 'title' keys.")
-
-    video_url = movie["url"]  # Use "url" instead of "path"
+    video_url = movie["url"]
     overlay_text = movie["title"].replace(":", "\\:")  # Escape special characters
 
     # FFmpeg command to dynamically fit overlay to video resolution
