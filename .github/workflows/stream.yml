@@ -1,27 +1,32 @@
-name: Stream Random Movie with Overlay
+name: Video Stream
 
 on:
-  workflow_dispatch:  # Allows manual execution from GitHub Actions
-  schedule:
-    - cron: "0 */3 * * *"  # Runs every 3 hours
-    
+  push:
+    branches:
+      - main  # Runs the workflow when code is pushed to 'main'
+  workflow_dispatch:  # Allows manual triggering
+
 jobs:
   stream:
-    runs-on: ubuntu-latest
-    timeout-minutes: 0  # Prevent timeout
+    runs-on: ubuntu-latest  # Runs on a Linux environment
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
       - name: Install Dependencies
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg jq python3 python3-pip
+        run: |
+          pip install ffmpeg-python
+          sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Install Python Packages
-        run: pip install -r requirements.txt
-
-      - name: Run Streaming Script
+      - name: Run Stream Script
         run: |
           while true; do
-            python3 stream.py
+            python stream.py || echo "Script crashed. Restarting..."
+            sleep 5  # Wait 5 seconds before restarting
           done
