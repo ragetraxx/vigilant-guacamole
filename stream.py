@@ -51,4 +51,4 @@ while True:  # Infinite loop
 
     except Exception as e:
         print(f"Error: {e}")
-        time.sleep(5)  # Delay before retrying
+        time.sleep(10)  # Delay before retrying
