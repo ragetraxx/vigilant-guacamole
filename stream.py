@@ -37,7 +37,7 @@ while True:  # Infinite loop
         command = f"""
         ffmpeg -re -i {video_url_escaped} -i {overlay_path_escaped} \
         -filter_complex "[1:v]scale2ref=w=iw:h=ih[ovr][base];[base][ovr]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
-        -c:v libx264 -preset veryfast -b:v 4000k -maxrate 5000k -bufsize 10000k -pix_fmt yuv420p -g 50 \
+        -c:v libx264 -preset veryfast -b:v 2000k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 \
         -c:a aac -b:a 192k -ar 48000 -f flv {shlex.quote(rtmp_url)}
         """
 
