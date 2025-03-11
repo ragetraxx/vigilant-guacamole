@@ -3,16 +3,21 @@ name: Video Stream
 on:
   push:
     branches:
-      - main  # Runs the workflow when code is pushed to 'main'
-  workflow_dispatch:  # Allows manual triggering
+      - main
+  schedule:
+    - cron: "0 */5 * * *"
+  workflow_dispatch:
 
 jobs:
   stream:
-    runs-on: ubuntu-latest  # Runs on a Linux environment
+    runs-on: ubuntu-latest
+    concurrency:
+      group: video-stream
+      cancel-in-progress: true
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set Up Python
         uses: actions/setup-python@v4
@@ -25,8 +30,4 @@ jobs:
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Run Stream Script
-        run: |
-          while true; do
-            python stream.py || echo "Script crashed. Restarting..."
-            sleep 3  # Wait 3 seconds before restarting
-          done
+        run: python stream.py
