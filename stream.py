@@ -10,22 +10,35 @@ rtmp_url = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
 # Overlay image
 overlay_path = "overlay.png"
 
-while True:  # Infinite loop
+# Function to load movies dynamically
+def load_movies():
     try:
-        # Load movies from JSON
         with open("movies.json", "r") as file:
             movies = json.load(file)
 
-        # Filter out invalid entries
+        # Filter out valid movies
         valid_movies = [m for m in movies if "url" in m and "title" in m]
-
         if not valid_movies:
             print("No valid movies found in JSON file.")
-            time.sleep(5)
+            return []
+        return valid_movies
+
+    except Exception as e:
+        print(f"Failed to load movies.json: {e}")
+        return []
+
+while True:  # Infinite loop
+    try:
+        # Reload movies list each time before selecting a new movie
+        movies = load_movies()
+
+        if not movies:
+            print("No valid movies available. Retrying in 10 seconds...")
+            time.sleep(10)
             continue
 
         # Select a random movie
-        movie = random.choice(valid_movies)
+        movie = random.choice(movies)
         video_url = movie["url"]
         overlay_text = movie["title"].replace(":", "\\:").replace("'", "\\'")  # Escape special characters
 
