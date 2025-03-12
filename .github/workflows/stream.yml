@@ -5,15 +5,15 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */5 * * *"
-  workflow_dispatch:
+    - cron: "0 */6 * * *"  # Runs every 6 hours
+  workflow_dispatch:  # Allow manual start
 
 jobs:
   stream:
     runs-on: ubuntu-latest
     concurrency:
       group: video-stream
-      cancel-in-progress: true
+      cancel-in-progress: false  # Avoid stopping a running job
 
     steps:
       - name: Checkout Repository
