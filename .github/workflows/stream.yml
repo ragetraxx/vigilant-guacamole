@@ -1,35 +1,24 @@
 name: Video Stream
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: "0 */6 * * *"  # Runs every 6 hours
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:  # Allows manual start
 
 jobs:
   stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 4320  # 3 days continuous run
-    continue-on-error: true  # Auto-restart on failure
-    concurrency:
-      group: video-stream
-      cancel-in-progress: false
+    timeout-minutes: 360  # Stops after 6 hours
+    continue-on-error: true  # Prevents stopping on errors
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set Up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install Dependencies
+      - name: Install FFmpeg
         run: |
-          pip install ffmpeg-python
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-      - name: Run Stream Script
+      - name: Run Streaming Script
         run: python stream.py
