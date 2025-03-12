@@ -1,24 +1,25 @@
-name: Video Stream
+name: Stream Movies
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # Runs every 6 hours
+    - cron: "0 */5 * * *"  # Runs every 5 hours
   workflow_dispatch:  # Allows manual start
 
 jobs:
   stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # Stops after 6 hours
-    continue-on-error: true  # Prevents stopping on errors
+    timeout-minutes: 0  # Disables timeout
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+        run: sudo apt update && sudo apt install -y ffmpeg
 
-      - name: Run Streaming Script
-        run: python stream.py
+      - name: Run Movie Streaming Script
+        run: |
+          while true; do
+            python3 stream_movie.py
+            sleep 5
+          done
