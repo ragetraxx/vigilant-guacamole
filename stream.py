@@ -52,10 +52,10 @@ overlay_path_escaped = shlex.quote(overlay_path)
 
 # Low-latency FFmpeg command
 command = f"""
-ffmpeg -re -fflags nobuffer -rtbufsize 64M -probesize 10M -analyzeduration 1000000 \
--threads 1 -i {video_url_escaped} -i {overlay_path_escaped} \
--filter_complex "[1:v]scale2ref=w=iw:h=ih[ovr][base];[base][ovr]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20,fps=30" \
--c:v libx264 -preset ultrafast -tune zerolatency -b:v 2000k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 \
+ffmpeg -re -fflags nobuffer -rtbufsize 128M -probesize 10M -analyzeduration 1000000 \
+-threads 2 -i {video_url_escaped} -i {overlay_path_escaped} \
+-filter_complex "[1:v]scale2ref=w=main_w:h=main_h:force_original_aspect_ratio=decrease[ovr][base];[base][ovr]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20,fps=30" \
+-c:v libx264 -preset fast -tune zerolatency -b:v 2500k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 \
 -c:a aac -b:a 192k -ar 48000 -f flv {shlex.quote(rtmp_url)}
 """
 
