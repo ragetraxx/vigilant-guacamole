@@ -6,14 +6,16 @@ on:
       - main
   schedule:
     - cron: "0 */6 * * *"  # Runs every 6 hours
-  workflow_dispatch:  # Allow manual start
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   stream:
     runs-on: ubuntu-latest
+    timeout-minutes: 4320  # 3 days continuous run
+    continue-on-error: true  # Auto-restart on failure
     concurrency:
       group: video-stream
-      cancel-in-progress: false  # Avoid stopping a running job
+      cancel-in-progress: false
 
     steps:
       - name: Checkout Repository
