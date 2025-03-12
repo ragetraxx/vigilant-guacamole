@@ -4,7 +4,7 @@ import random
 import time
 import subprocess
 
-# RTMP Server URL
+# RTMP Server
 RTMP_URL = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
 OVERLAY_PATH = "overlay.png"
 MOVIES_FILE = "movies.json"
@@ -32,34 +32,37 @@ def save_played_movie(title):
     with open(PLAYED_MOVIES_FILE, "a") as file:
         file.write(title + "\n")
 
-# Load Movies and Select a Movie
-movies = load_movies()
-played_movies = get_played_movies()
-available_movies = [m for m in movies if m["title"] not in played_movies]
+# Infinite Streaming Loop (Keeps Running)
+while True:
+    movies = load_movies()
+    played_movies = get_played_movies()
+    available_movies = [m for m in movies if m["title"] not in played_movies]
 
-# Reset Played List if All Movies Are Played
-if not available_movies:
-    print("All movies played. Resetting list...")
-    open(PLAYED_MOVIES_FILE, "w").close()  # Clear the played movies file
-    available_movies = movies
+    if not available_movies:
+        print("All movies played. Resetting list...")
+        open(PLAYED_MOVIES_FILE, "w").close()  # Reset played list
+        available_movies = movies
 
-selected_movie = random.choice(available_movies)
-video_url = selected_movie["url"]
-overlay_text = selected_movie["title"].replace(":", "\\:").replace("'", "\\'")
+    selected_movie = random.choice(available_movies)
+    video_url = selected_movie["url"]
+    overlay_text = selected_movie["title"].replace(":", "\\:").replace("'", "\\'")
 
-# Save Movie as Played
-save_played_movie(selected_movie["title"])
+    save_played_movie(selected_movie["title"])
 
-# FFmpeg Streaming Command (Optimized for Low Latency)
-ffmpeg_command = f"""
-ffmpeg -re -fflags nobuffer -rtbufsize 64M -probesize 10M -analyzeduration 500000 \
--i "{video_url}" -i "{OVERLAY_PATH}" \
--filter_complex "[1:v]scale=main_w:main_h[ovr];[0:v][ovr]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
--c:v libx264 -preset ultrafast -tune zerolatency -b:v 1200k -maxrate 1500k -bufsize 2000k -pix_fmt yuv420p -g 50 \
--c:a aac -b:a 128k -ar 44100 -f flv "{RTMP_URL}"
-"""
+    ffmpeg_command = f"""
+    ffmpeg -re -fflags nobuffer -rtbufsize 64M -probesize 10M -analyzeduration 500000 \
+    -i "{video_url}" -i "{OVERLAY_PATH}" \
+    -filter_complex "[1:v]scale=main_w:main_h[ovr];[0:v][ovr]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
+    -c:v libx264 -preset ultrafast -tune zerolatency -b:v 1200k -maxrate 1500k -bufsize 2000k -pix_fmt yuv420p -g 50 \
+    -c:a aac -b:a 128k -ar 44100 -f flv "{RTMP_URL}"
+    """
 
-print(f"🎬 Now Streaming: {selected_movie['title']} ({video_url})")
+    print(f"🎬 Now Streaming: {selected_movie['title']} ({video_url})")
 
-# Start Streaming
-subprocess.run(ffmpeg_command, shell=True)
+    try:
+        subprocess.run(ffmpeg_command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"⚠ FFmpeg crashed: {e}. Restarting...")
+
+    print("⏳ Waiting 5 seconds before playing the next movie...")
+    time.sleep(5)
