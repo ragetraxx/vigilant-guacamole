@@ -1,54 +1,56 @@
 import os
 import json
 import random
-import shlex
+import time
+import subprocess
 
-# RTMP Server Details
+# RTMP Server URL
 RTMP_URL = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
 OVERLAY_PATH = "overlay.png"
-
-# Movie Tracking Files
-MOVIE_FILE = "movies.json"
-PLAYED_FILE = "played_movies.txt"
+MOVIES_FILE = "movies.json"
+PLAYED_MOVIES_FILE = "played_movies.txt"
 
 # Load Movies
 def load_movies():
     try:
-        with open(MOVIE_FILE, "r") as file:
+        with open(MOVIES_FILE, "r") as file:
             movies = json.load(file)
         return [m for m in movies if "url" in m and "title" in m]
     except Exception as e:
-        print(f"Failed to load movies.json: {e}")
+        print(f"Error loading movies.json: {e}")
         return []
 
 # Get Played Movies
 def get_played_movies():
-    return set(open(PLAYED_FILE).read().splitlines()) if os.path.exists(PLAYED_FILE) else set()
+    if os.path.exists(PLAYED_MOVIES_FILE):
+        with open(PLAYED_MOVIES_FILE, "r") as file:
+            return set(file.read().splitlines())
+    return set()
 
 # Save Played Movie
 def save_played_movie(title):
-    with open(PLAYED_FILE, "a") as file:
+    with open(PLAYED_MOVIES_FILE, "a") as file:
         file.write(title + "\n")
 
-# Select a Movie
+# Load Movies and Select a Movie
 movies = load_movies()
 played_movies = get_played_movies()
-
-# Choose a new movie
 available_movies = [m for m in movies if m["title"] not in played_movies]
+
+# Reset Played List if All Movies Are Played
 if not available_movies:
     print("All movies played. Resetting list...")
-    open(PLAYED_FILE, "w").close()  # Clear file
+    open(PLAYED_MOVIES_FILE, "w").close()  # Clear the played movies file
     available_movies = movies
 
 selected_movie = random.choice(available_movies)
 video_url = selected_movie["url"]
 overlay_text = selected_movie["title"].replace(":", "\\:").replace("'", "\\'")
 
-# Save the movie as played
+# Save Movie as Played
 save_played_movie(selected_movie["title"])
 
-# FFmpeg Streaming Command (Low Latency)
+# FFmpeg Streaming Command (Optimized for Low Latency)
 ffmpeg_command = f"""
 ffmpeg -re -fflags nobuffer -rtbufsize 64M -probesize 10M -analyzeduration 500000 \
 -i "{video_url}" -i "{OVERLAY_PATH}" \
@@ -57,7 +59,7 @@ ffmpeg -re -fflags nobuffer -rtbufsize 64M -probesize 10M -analyzeduration 50000
 -c:a aac -b:a 128k -ar 44100 -f flv "{RTMP_URL}"
 """
 
-print(f"Now Streaming: {selected_movie['title']} ({video_url})")
+print(f"🎬 Now Streaming: {selected_movie['title']} ({video_url})")
 
-# Start the Stream
-os.system(ffmpeg_command)
+# Start Streaming
+subprocess.run(ffmpeg_command, shell=True)
