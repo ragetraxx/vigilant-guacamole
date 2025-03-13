@@ -43,19 +43,20 @@ def stream_movie(movie):
         "ffmpeg",
         "-re",
         "-fflags", "+genpts",
-        "-rtbufsize", "128M",
-        "-probesize", "10M",
-        "-analyzeduration", "1000000",
+        "-rtbufsize", "32M",  # Reduced buffer size for faster start
+        "-probesize", "1M",  # Faster stream analysis
+        "-analyzeduration", "500000",
         "-i", video_url_escaped,
         "-i", overlay_path_escaped,
         "-filter_complex",
         f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"
         f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20",
         "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-tune", "zerolatency",
-        "-b:v", "2500k",
-        "-maxrate", "3000k",
+        "-preset", "fast",  # Better quality than "ultrafast"
+        "-tune", "film",  # Improves sharpness
+        "-b:v", "4000k",  # Increased bitrate for less blur
+        "-crf", "23",  # Controls quality, lower = better
+        "-maxrate", "4500k",
         "-bufsize", "6000k",
         "-pix_fmt", "yuv420p",
         "-g", "50",
@@ -91,7 +92,7 @@ def main():
                 stream_movie(movie)
 
             print("🔄 Restarting random movie playlist...")
-    
+
     print("❌ ERROR: Maximum retry attempts reached. Exiting.")
 
 if __name__ == "__main__":
