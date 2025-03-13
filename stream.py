@@ -7,6 +7,7 @@ import time
 MOVIE_FILE = "movies.json"
 RTMP_URL = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
 OVERLAY = "overlay.png"
+LOG_FILE = "ffmpeg_log.txt"  # Log file to capture errors
 
 def load_movies():
     with open(MOVIE_FILE, "r") as f:
@@ -19,7 +20,6 @@ def stream_movie(movie):
     video_url_escaped = shlex.quote(url)
     overlay_path_escaped = shlex.quote(OVERLAY)
 
-    # Safely escape overlay text for drawtext
     overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')
 
     command = f"""
@@ -31,14 +31,13 @@ def stream_movie(movie):
     -c:a aac -b:a 192k -ar 48000 -f flv {shlex.quote(RTMP_URL)}
     """
 
-    print("Running FFmpeg Command:\n", command)  # Debugging step
+    print("Running FFmpeg Command:\n", command)  # Print command for debugging
 
-    try:
-        process = subprocess.run(command, shell=True)
-        if process.returncode != 0:
-            print(f"Warning: FFmpeg exited with code {process.returncode}")
-    except Exception as e:
-        print(f"Error streaming {title}: {e}")
+    with open(LOG_FILE, "w") as log:
+        process = subprocess.run(command, shell=True, stderr=log, stdout=log)
+
+    if process.returncode != 0:
+        print(f"FFmpeg failed. Check {LOG_FILE} for details.")
 
 if __name__ == "__main__":
     movies = load_movies()
@@ -46,10 +45,6 @@ if __name__ == "__main__":
     while True:
         movie = random.choice(movies)
         print(f"Streaming: {movie['title']}")
-        start_time = time.time()
         stream_movie(movie)
 
-        # Ensure a minimum duration before switching
-        elapsed_time = time.time() - start_time
-        if elapsed_time < 10:
-            time.sleep(10 - elapsed_time)  # Ensures at least 10 seconds before switching
+        time.sleep(5)  # Short delay before playing the next movie
