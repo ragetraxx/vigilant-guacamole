@@ -7,7 +7,6 @@ import time
 MOVIE_FILE = "movies.json"
 RTMP_URL = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
 OVERLAY = "overlay.png"
-LOG_FILE = "ffmpeg_log.txt"
 
 def load_movies():
     with open(MOVIE_FILE, "r") as f:
@@ -17,35 +16,25 @@ def stream_movie(movie):
     title = movie["title"]
     url = movie["url"]
 
+    # Escape paths to prevent issues
     video_url_escaped = shlex.quote(url)
     overlay_path_escaped = shlex.quote(OVERLAY)
-
-    # Escape text for drawtext filter
-    overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')
+    overlay_text = shlex.quote(title)
 
     command = f"""
-    ffmpeg -re -i {video_url_escaped} -i {overlay_path_escaped} \
-    -filter_complex "[1:v]scale='if(gt(overlay_w,main_w),main_w,overlay_w)':'if(gt(overlay_h,main_h),main_h,overlay_h)'[ovr]; \
-                     [0:v][ovr]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2, \
-                     drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
-    -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2500k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 -r 30 \
+    ffmpeg -re -fflags +genpts -rtbufsize 128M -probesize 10M -analyzeduration 1000000 \
+    -i {video_url_escaped} -i {overlay_path_escaped} \
+    -filter_complex "[1:v]scale2ref=w=main_w:h=main_h[ovr][base];[base][ovr]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
+    -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2500k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 \
     -c:a aac -b:a 192k -ar 48000 -f flv {shlex.quote(RTMP_URL)}
     """
 
-    print("Running FFmpeg Command:\n", command)
-
-    with open(LOG_FILE, "w") as log:
-        process = subprocess.run(command, shell=True, stderr=log, stdout=log)
-
-    if process.returncode != 0:
-        print(f"FFmpeg failed. Check {LOG_FILE} for details.")
+    subprocess.run(command, shell=True)
 
 if __name__ == "__main__":
     movies = load_movies()
-
     while True:
         movie = random.choice(movies)
         print(f"Streaming: {movie['title']}")
         stream_movie(movie)
-
         time.sleep(5)  # Small delay before playing the next movie
