@@ -19,19 +19,19 @@ def stream_movie(movie):
     video_url_escaped = shlex.quote(url)
     overlay_path_escaped = shlex.quote(OVERLAY)
 
-    # Ensure text is safely formatted for drawtext
+    # Safely escape overlay text for drawtext
     overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')
 
     command = f"""
-    ffmpeg -re -stream_loop -1 -fflags +genpts -rtbufsize 256M -probesize 50M -analyzeduration 2000000 \
-    -i {video_url_escaped} -i {overlay_path_escaped} \
-    -filter_complex "[1:v]scale='if(gt(a,main_w/main_h),main_w,-1)':'if(gt(a,main_w/main_h),-1,main_h)'[ovr]; \
+    ffmpeg -re -i {video_url_escaped} -i {overlay_path_escaped} \
+    -filter_complex "[1:v]scale=min(main_w,overlay_w):min(main_h,overlay_h)[ovr]; \
                      [0:v][ovr]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2, \
                      drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
     -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2500k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 -r 30 \
-    -c:a aac -b:a 192k -ar 48000 -strict experimental \
-    -f flv {shlex.quote(RTMP_URL)}
+    -c:a aac -b:a 192k -ar 48000 -f flv {shlex.quote(RTMP_URL)}
     """
+
+    print("Running FFmpeg Command:\n", command)  # Debugging step
 
     try:
         process = subprocess.run(command, shell=True)
