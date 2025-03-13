@@ -6,7 +6,16 @@ on:
   workflow_dispatch:  # Allows manual start
 
 jobs:
+  cancel-previous:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.12.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
   stream:
+    needs: cancel-previous
     runs-on: ubuntu-latest
     timeout-minutes: 0  # Disables timeout
 
