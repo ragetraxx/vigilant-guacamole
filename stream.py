@@ -87,8 +87,8 @@ def stream_movie(movie):
     overlay_text = shlex.quote(title)
 
     # Fix the colon issue in the title
-    overlay_text = f'"{title}"'  # Wrap title in double quotes
-    
+    overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')
+
     command = [
         "ffmpeg",
         "-re",
