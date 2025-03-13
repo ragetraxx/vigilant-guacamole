@@ -6,7 +6,8 @@ import time
 
 MOVIE_FILE = "movies.json"
 RTMP_URL = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
-OVERLAY = "overlay.png"
+OVERTOP = "overtop.png"
+OVERBELOW = "overbelow.png"
 
 def load_movies():
     with open(MOVIE_FILE, "r") as f:
@@ -18,14 +19,18 @@ def stream_movie(movie):
 
     # Escape paths to prevent issues
     video_url_escaped = shlex.quote(url)
-    overlay_path_escaped = shlex.quote(OVERLAY)
+    overtop_path_escaped = shlex.quote(OVERTOP)
+    overbelow_path_escaped = shlex.quote(OVERBELOW)
     overlay_text = shlex.quote(title)
 
     command = f"""
     ffmpeg -re -fflags +genpts -rtbufsize 128M -probesize 10M -analyzeduration 1000000 \
-    -i {video_url_escaped} -i {overlay_path_escaped} \
-    -filter_complex "[1:v]scale=w=main_w:h=main_h[ovr];[0:v][ovr]overlay=0:0[vid]; \
-                     [vid]drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
+    -i {video_url_escaped} -i {overtop_path_escaped} -i {overbelow_path_escaped} \
+    -filter_complex "[1:v]scale=-1:ih[ovtop]; \
+                     [2:v]scale=-1:ih[ovbelow]; \
+                     [0:v][ovtop]overlay=W-w-20:20[step1]; \
+                     [step1][ovbelow]overlay=W-w-20:H-h-20[step2]; \
+                     [step2]drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20" \
     -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2500k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 50 \
     -c:a aac -b:a 192k -ar 48000 -f flv {shlex.quote(RTMP_URL)}
     """
