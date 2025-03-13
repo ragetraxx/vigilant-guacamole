@@ -40,14 +40,13 @@ def generate_epg(movies):
     start_time = datetime.datetime.utcnow()
     epg_data = """<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n"""
 
-    # Select random movies for the schedule
     total_movies = min(TOTAL_MOVIES, len(movies))
     if total_movies == 0:
         print("❌ ERROR: No movies available to create EPG!")
         return []
 
     selected_movies = random.sample(movies, total_movies)
-    schedule = []  # Store selected movies
+    schedule = []
 
     for movie in selected_movies:
         start_str = start_time.strftime("%Y%m%d%H%M%S +0000")
@@ -64,11 +63,9 @@ def generate_epg(movies):
 
     epg_data += "</tv>"
 
-    # Write the EPG to a file
     with open(EPG_FILE, "w") as f:
         f.write(epg_data)
 
-    # Check if EPG file was created
     if os.path.exists(EPG_FILE) and os.path.getsize(EPG_FILE) > 0:
         print(f"✅ SUCCESS: EPG generated with {len(schedule)} movies")
     else:
@@ -90,11 +87,30 @@ def stream_movie(movie):
     overlay_text = shlex.quote(title)
 
     command = [
-        "ffmpeg", "-re", "-fflags", "+genpts", "-rtbufsize", "128M", "-probesize", "10M", "-analyzeduration", "1000000",
-        "-i", video_url_escaped, "-i", overlay_path_escaped,
-        "-filter_complex", "[1:v]scale=iw:ih[ovr];[0:v][ovr]overlay=0:0,drawtext=text='{}':fontcolor=white:fontsize=24:x=20:y=20".format(overlay_text),
-        "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency", "-b:v", "2500k", "-maxrate", "3000k", "-bufsize", "6000k", "-pix_fmt", "yuv420p", "-g", "50",
-        "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-f", "flv", RTMP_URL
+        "ffmpeg",
+        "-re",
+        "-fflags", "+genpts",
+        "-rtbufsize", "128M",
+        "-probesize", "10M",
+        "-analyzeduration", "1000000",
+        "-i", video_url_escaped,
+        "-i", overlay_path_escaped,
+        "-filter_complex",
+        f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"
+        f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-tune", "zerolatency",
+        "-b:v", "2500k",
+        "-maxrate", "3000k",
+        "-bufsize", "6000k",
+        "-pix_fmt", "yuv420p",
+        "-g", "50",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-ar", "48000",
+        "-f", "flv",
+        RTMP_URL
     ]
 
     print(f"🎬 Now Streaming: {title}")
