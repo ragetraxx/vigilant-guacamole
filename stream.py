@@ -28,19 +28,20 @@ def load_movies():
             return []
 
 def load_played_movies():
-    """Load played movies from JSON file."""
+    """Load played movies from last_played.json."""
     if os.path.exists(LAST_PLAYED_FILE):
         with open(LAST_PLAYED_FILE, "r") as f:
             try:
-                return json.load(f).get("played", [])
+                data = json.load(f)
+                return data.get("played", [])
             except json.JSONDecodeError:
                 return []
     return []
 
 def save_played_movies(played_movies):
-    """Save played movies to JSON file."""
+    """Save played movies to last_played.json."""
     with open(LAST_PLAYED_FILE, "w") as f:
-        json.dump({"played": played_movies}, f)
+        json.dump({"played": played_movies}, f, indent=4)
 
 def stream_movie(movie):
     """Stream a single movie using FFmpeg."""
@@ -115,7 +116,7 @@ def main():
             unplayed_movies = [movie for movie in movies if movie["title"] not in played_movies]
 
             if not unplayed_movies:
-                print("❌ ERROR: No unplayed movies found, but shouldn't happen. Resetting list.")
+                print("❌ ERROR: No unplayed movies found. Resetting list.")
                 played_movies = []
                 save_played_movies(played_movies)
                 unplayed_movies = movies
