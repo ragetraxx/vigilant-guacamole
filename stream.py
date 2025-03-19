@@ -7,9 +7,13 @@ import random
 
 MOVIE_FILE = "movies.json"
 LAST_PLAYED_FILE = "last_played.json"
-RTMP_URL = "rtmp://ssh101.bozztv.com:1935/ssh101/ragetv"
+RTMP_URL = os.getenv("RTMP_URL")  # Load RTMP URL from environment variable
 OVERLAY = "overlay.png"
 MAX_RETRIES = 3  # Maximum retry attempts if no movies are found
+
+if not RTMP_URL:
+    print("❌ ERROR: RTMP_URL environment variable is not set!")
+    exit(1)
 
 def load_movies():
     """Load movies from JSON file."""
@@ -28,18 +32,17 @@ def load_movies():
             return []
 
 def load_played_movies():
-    """Load played movies from last_played.json."""
+    """Load played movies from JSON file."""
     if os.path.exists(LAST_PLAYED_FILE):
         with open(LAST_PLAYED_FILE, "r") as f:
             try:
-                data = json.load(f)
-                return data.get("played", [])
+                return json.load(f).get("played", [])
             except json.JSONDecodeError:
                 return []
     return []
 
 def save_played_movies(played_movies):
-    """Save played movies to last_played.json."""
+    """Save played movies to JSON file."""
     with open(LAST_PLAYED_FILE, "w") as f:
         json.dump({"played": played_movies}, f, indent=4)
 
@@ -85,6 +88,11 @@ def stream_movie(movie):
     ]
 
     print(f"🎬 Now Streaming: {title}")
+
+    # Save the currently playing movie
+    with open(LAST_PLAYED_FILE, "w") as f:
+        json.dump({"played": [title]}, f, indent=4)
+
     subprocess.run(command)
 
 def main():
@@ -116,7 +124,7 @@ def main():
             unplayed_movies = [movie for movie in movies if movie["title"] not in played_movies]
 
             if not unplayed_movies:
-                print("❌ ERROR: No unplayed movies found. Resetting list.")
+                print("❌ ERROR: No unplayed movies found, but shouldn't happen. Resetting list.")
                 played_movies = []
                 save_played_movies(played_movies)
                 unplayed_movies = movies
