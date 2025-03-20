@@ -1,4 +1,4 @@
-name: Live Stream Deployment
+name: Play JSON Update & Live Stream Deployment
 
 on:
   push:
@@ -6,35 +6,58 @@ on:
       - main
   schedule:
     - cron: "0 */6 * * *"  # Runs every 6 hours
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  update-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # Ensures we can push changes if needed
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: "3.x"
+
+      - name: Install Dependencies
+        run: pip install pyyaml
+
+      - name: Run Script (play.py)
+        run: python3 play.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add play.json
+          git diff --staged --quiet || git commit -m "Updated play.json with new movies"
+          git push
+
+      - name: Pull Latest Changes
+        run: git pull origin main
 
       - name: Install FFmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Create environment file
+      - name: Debug Secrets
         run: |
-          echo "RTMP_URL=${{ secrets.RTMP_URL }}" > .env
+          echo "Checking if RTMP_URL is set..."
+          if [ -z "$RTMP_URL" ]; then
+            echo "RTMP_URL is NOT set!"
+            exit 1
+          else
+            echo "RTMP_URL is set."
+          fi
+        env:
+          RTMP_URL: ${{ secrets.RTMP_URL }}
 
-      - name: Run live stream script
-        run: |
-          export $(grep -v '^#' .env | xargs)  # Load environment variables
-          nohup python3 stream.py > stream.log 2>&1 &
-          echo "Stream started at $(date)" >> stream.log
-          sleep 21500  # ~6 hours to match the schedule
+      - name: Run live stream script (stream.py)
+        env:
+          RTMP_URL: ${{ secrets.RTMP_URL }}
+        run: python3 stream.py
