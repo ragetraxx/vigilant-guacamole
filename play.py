@@ -13,29 +13,28 @@ def load_movies(filename):
         return []
 
 def save_play_movies(movies):
-    """Save selected movies to play.json"""
+    """Overwrite play.json with new selected movies"""
     with open(PLAY_FILE, "w", encoding="utf-8") as file:
         json.dump(movies, file, indent=4)
 
 def update_play_json():
-    """Randomly select 5 movies not in play.json and update play.json"""
-    all_movies = load_movies(MOVIE_FILE)  # All available movies
-    played_movies = load_movies(PLAY_FILE)  # Already played movies
+    """Randomly select 5 movies not already played and overwrite play.json"""
+    all_movies = load_movies(MOVIE_FILE)  # Load all available movies
+    played_movies = load_movies(PLAY_FILE)  # Load previously played movies
 
-    # Filter out played movies
+    # Filter out movies that have already been played
     available_movies = [movie for movie in all_movies if movie not in played_movies]
 
-    # If all movies have been played, reset play.json (Optional)
+    # If there are not enough movies left, reset the cycle
     if len(available_movies) < 5:
-        print("All movies have been played. Resetting play.json.")
-        save_play_movies([])  # Reset the file
-        available_movies = all_movies  # Refill from original movies.json
+        print("All movies have been played. Restarting the cycle.")
+        available_movies = all_movies  # Reset to all movies
 
-    # Randomly pick 5 movies from the available ones
+    # Randomly select 5 new movies
     selected_movies = random.sample(available_movies, 5)
-    
-    # Save to play.json
-    save_play_movies(played_movies + selected_movies)
+
+    # Overwrite play.json with the new selection
+    save_play_movies(selected_movies)
     print("Updated play.json with 5 new movies.")
 
 if __name__ == "__main__":
