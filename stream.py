@@ -2,15 +2,22 @@ import os
 import json
 import subprocess
 import time
+import shutil
 
 PLAY_FILE = "play.json"
 RTMP_URL = os.getenv("RTMP_URL")  # ✅ Get RTMP_URL from environment
 OVERLAY = "overlay.png"
 MAX_RETRIES = 3  # Maximum retry attempts if no movies are found
+FFMPEG_LOG_FILE = "ffmpeg.log"  # Log FFmpeg output
 
-# ✅ Check if RTMP_URL is set
+# ✅ Ensure RTMP_URL is set
 if not RTMP_URL:
     print("❌ ERROR: RTMP_URL environment variable is NOT set! Check GitHub Secrets.")
+    exit(1)
+
+# ✅ Ensure FFmpeg is installed
+if not shutil.which("ffmpeg"):
+    print("❌ ERROR: FFmpeg is not installed or not in PATH!")
     exit(1)
 
 # ✅ Ensure required files exist
@@ -36,7 +43,7 @@ def load_movies():
         return []
 
 def stream_movie(movie):
-    """Stream a single movie using FFmpeg and wait for it to finish."""
+    """Stream a single movie using FFmpeg."""
     title = movie.get("title", "Unknown Title")
     url = movie.get("url")
 
@@ -78,19 +85,22 @@ def stream_movie(movie):
     print("Executing FFmpeg command:", " ".join(command))
 
     try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        with open(FFMPEG_LOG_FILE, "w") as log_file:
+            process = subprocess.Popen(
+                command, stdout=log_file, stderr=subprocess.STDOUT, text=True
+            )
 
-        # ✅ Wait for FFmpeg to finish before playing the next movie
-        for line in process.stderr:
-            print(line, end="")
+        process.wait()
 
-        process.wait()  # ✅ Ensures that the next movie starts only after the current one ends
+        if process.returncode != 0:
+            print(f"❌ ERROR: FFmpeg exited with error code {process.returncode} for '{title}'")
+            print(f"📝 Check '{FFMPEG_LOG_FILE}' for details.")
 
     except Exception as e:
         print(f"❌ ERROR: FFmpeg failed for '{title}' - {str(e)}")
 
 def main():
-    """Main function to stream all movies in sequence."""
+    """Main function to play all movies sequentially."""
     retry_attempts = 0
 
     while retry_attempts < MAX_RETRIES:
@@ -106,8 +116,9 @@ def main():
 
         while True:
             for movie in movies:
-                stream_movie(movie)  # ✅ This will now wait for each movie to finish before starting the next one
+                stream_movie(movie)
                 print("🔄 Movie ended. Playing next movie...")
+                time.sleep(10)  # Short pause before starting the next movie
 
             print("🔄 All movies played, restarting from the beginning...")
 
