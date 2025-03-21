@@ -30,20 +30,20 @@ if not os.path.exists(OVERLAY):
     exit(1)
 
 def load_movies():
-    """Load movies from play.json."""
+    """Load movies from play.json in their original order."""
     try:
         with open(PLAY_FILE, "r") as f:
             movies = json.load(f)
             if not movies:
                 print("❌ ERROR: play.json is empty!")
                 return []
-            return movies
+            return list(movies)  # ✅ Ensure it's a list and preserves order
     except json.JSONDecodeError:
         print("❌ ERROR: Failed to parse play.json! Check for syntax errors.")
         return []
 
 def stream_movie(movie):
-    """Stream a single movie using FFmpeg."""
+    """Stream a single movie using FFmpeg, ensuring it plays fully before continuing."""
     title = movie.get("title", "Unknown Title")
     url = movie.get("url")
 
@@ -82,17 +82,16 @@ def stream_movie(movie):
     ]
 
     print(f"🎬 Now Streaming: {title}")
-    print("Executing FFmpeg command:", " ".join(command))
 
     try:
         with open(FFMPEG_LOG_FILE, "w") as log_file:
-            process = subprocess.Popen(
-                command, stdout=log_file, stderr=subprocess.STDOUT, text=True
-            )
+            process = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT)
+        
+        process.wait()  # ✅ Wait until the movie finishes before continuing
 
-        process.wait()
-
-        if process.returncode != 0:
+        if process.returncode == 0:
+            print(f"✅ Finished streaming: {title}")
+        else:
             print(f"❌ ERROR: FFmpeg exited with error code {process.returncode} for '{title}'")
             print(f"📝 Check '{FFMPEG_LOG_FILE}' for details.")
 
@@ -100,7 +99,7 @@ def stream_movie(movie):
         print(f"❌ ERROR: FFmpeg failed for '{title}' - {str(e)}")
 
 def main():
-    """Main function to play all movies sequentially."""
+    """Play all movies sequentially, ensuring each plays fully before continuing."""
     retry_attempts = 0
 
     while retry_attempts < MAX_RETRIES:
@@ -112,15 +111,14 @@ def main():
             time.sleep(60)
             continue
 
-        retry_attempts = 0  # Reset retry counter on success
+        retry_attempts = 0  # Reset retry counter
 
-        while True:
-            for movie in movies:
-                stream_movie(movie)
-                print("🔄 Movie ended. Playing next movie...")
-                time.sleep(10)  # Short pause before starting the next movie
+        for movie in movies:
+            stream_movie(movie)  # ✅ Movie will play completely before next one starts
+            print("🔄 Movie ended. Playing next movie...")
+            time.sleep(10)  # Short pause before next movie
 
-            print("🔄 All movies played, restarting from the beginning...")
+        print("🔄 All movies played. Reloading play.json...")
 
     print("❌ ERROR: Maximum retry attempts reached. Exiting.")
 
