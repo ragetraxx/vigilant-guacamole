@@ -3,10 +3,12 @@ import json
 import subprocess
 import time
 
+# ✅ Configuration
 PLAY_FILE = "play.json"
-RTMP_URL = os.getenv("RTMP_URL")  # ✅ Get RTMP_URL from GitHub Secret
-OVERLAY = "overlay.png"
+RTMP_URL = os.getenv("RTMP_URL")  # Get RTMP_URL from GitHub Secret
+OVERLAY = os.path.abspath("overlay.png")  # Use absolute path for overlay
 MAX_RETRIES = 3  # Retry attempts if no movies are found
+RETRY_DELAY = 60  # Time (seconds) before retrying if no movies are found
 
 # ✅ Check if RTMP_URL is set
 if not RTMP_URL:
@@ -50,36 +52,34 @@ def stream_movie(movie):
         "ffmpeg",
         "-re",
         "-fflags", "+genpts",
-        "-rtbufsize", "8M",  # ✅ Increased buffer to reduce stalling
-        "-probesize", "64M",
-        "-analyzeduration", "64M",
+        "-rtbufsize", "8M",  # ✅ Lower buffer to prevent excess latency
+        "-probesize", "32M",
+        "-analyzeduration", "32M",
         "-i", url,
         "-i", OVERLAY,
         "-filter_complex",
-        f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"
-        f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=28:x=20:y=20",
+        "[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"  # ✅ Correct overlay positioning
+        f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=28:x=30:y=30",
         "-c:v", "libx264",
-        "-preset", "ultrafast",  # ✅ Faster encoding to avoid delays
-        "-tune", "zerolatency",  # ✅ Reduces delay & lag
-        "-crf", "23",  # ✅ Balanced quality & performance
-        "-maxrate", "4000k",  # ✅ Lower max bitrate for stable stream
-        "-bufsize", "8000k",  # ✅ Increased buffer to prevent stalling
+        "-preset", "ultrafast",
+        "-tune", "zerolatency",
+        "-crf", "18",  # ✅ Balanced quality & performance
+        "-maxrate", "5000k",  # ✅ Adjusted for stability
+        "-bufsize", "6000k",  # ✅ Reduced to avoid long buffering
         "-pix_fmt", "yuv420p",
-        "-g", "60",  # ✅ Better keyframe spacing
-        "-r", "30",  # ✅ Force constant frame rate for stability
+        "-g", "60",
+        "-r", "30",
         "-c:a", "aac",
-        "-b:a", "128k",  # ✅ Lower audio bitrate for stable stream
-        "-ar", "44100",  # ✅ Ensures compatibility
+        "-b:a", "128k",
+        "-ar", "44100",
         "-movflags", "+faststart",
         "-f", "flv",
         RTMP_URL,
-        "-loglevel", "debug",  # ✅ Show all logs for debugging
-        "-report",  # ✅ Saves logs to a file for troubleshooting
+        "-loglevel", "error",  # ✅ Show only errors, not all logs
     ]
 
     print(f"🎬 Now Streaming: {title}")
-    print("Executing FFmpeg command:", " ".join(command))
-
+    
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
@@ -101,8 +101,8 @@ def main():
 
         if not movies:
             retry_attempts += 1
-            print(f"❌ ERROR: No movies available! Retrying ({retry_attempts}/{MAX_RETRIES})...")
-            time.sleep(60)
+            print(f"❌ ERROR: No movies available! Retrying ({retry_attempts}/{MAX_RETRIES}) in {RETRY_DELAY} seconds...")
+            time.sleep(RETRY_DELAY)
             continue
 
         retry_attempts = 0  # Reset retry counter on success
