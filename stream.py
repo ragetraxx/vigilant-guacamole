@@ -4,9 +4,9 @@ import subprocess
 import time
 
 PLAY_FILE = "play.json"
-RTMP_URL = os.getenv("RTMP_URL")  # ✅ Get RTMP_URL from environment
+RTMP_URL = os.getenv("RTMP_URL")  # ✅ Get RTMP_URL from GitHub Secret
 OVERLAY = "overlay.png"
-MAX_RETRIES = 3  # Maximum retry attempts if no movies are found
+MAX_RETRIES = 3  # Retry attempts if no movies are found
 
 # ✅ Check if RTMP_URL is set
 if not RTMP_URL:
@@ -50,31 +50,31 @@ def stream_movie(movie):
         "ffmpeg",
         "-re",
         "-fflags", "+genpts",
-        "-rtbufsize", "4M",  # Reduce buffer size for less delay
-        "-probesize", "500K",  # Faster stream detection
-        "-analyzeduration", "250000",  # Reduced analysis time
+        "-rtbufsize", "8M",  # ✅ Increased buffer to reduce stalling
+        "-probesize", "64M",
+        "-analyzeduration", "64M",
         "-i", url,
         "-i", OVERLAY,
         "-filter_complex",
         f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"
-        f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=24:x=20:y=20",
+        f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=28:x=20:y=20",
         "-c:v", "libx264",
-        "-profile:v", "high",
-        "-level", "5.2",  # Supports SD to 4K
-        "-preset", "faster",  # Lower latency than "slow"
-        "-tune", "film",  # Better sharpness & motion handling
-        "-b:v", "10000k",  # Higher bitrate for better quality
-        "-crf", "16",  # Lower CRF for less blur
-        "-maxrate", "12000k",  # Allows higher peaks
-        "-bufsize", "6000k",  # Reduces buffering lag
+        "-preset", "ultrafast",  # ✅ Faster encoding to avoid delays
+        "-tune", "zerolatency",  # ✅ Reduces delay & lag
+        "-crf", "23",  # ✅ Balanced quality & performance
+        "-maxrate", "4000k",  # ✅ Lower max bitrate for stable stream
+        "-bufsize", "8000k",  # ✅ Increased buffer to prevent stalling
         "-pix_fmt", "yuv420p",
-        "-g", "50",  # Lower GOP for better real-time performance
+        "-g", "60",  # ✅ Better keyframe spacing
+        "-r", "30",  # ✅ Force constant frame rate for stability
         "-c:a", "aac",
-        "-b:a", "320k",  # Higher audio bitrate for better clarity
-        "-ar", "48000",  # ✅ Keep high-quality audio but remove forced stereo
+        "-b:a", "128k",  # ✅ Lower audio bitrate for stable stream
+        "-ar", "44100",  # ✅ Ensures compatibility
         "-movflags", "+faststart",
         "-f", "flv",
-        RTMP_URL
+        RTMP_URL,
+        "-loglevel", "debug",  # ✅ Show all logs for debugging
+        "-report",  # ✅ Saves logs to a file for troubleshooting
     ]
 
     print(f"🎬 Now Streaming: {title}")
@@ -87,7 +87,7 @@ def stream_movie(movie):
         for line in process.stderr:
             print(line, end="")
 
-        process.wait()  # ✅ Ensures that the next movie starts only after the current one ends
+        process.wait()
 
     except Exception as e:
         print(f"❌ ERROR: FFmpeg failed for '{title}' - {str(e)}")
