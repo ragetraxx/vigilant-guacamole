@@ -33,9 +33,20 @@ def update_play_json():
     # Randomly select 5 new movies
     selected_movies = random.sample(available_movies, 5)
 
+    # Add "channel.mp4" before each movie
+    final_playlist = []
+    for movie in selected_movies:
+        final_playlist.append({
+            "image": "https://example.com/channel.jpg",
+            "category": "Channel Intro",
+            "title": "Channel Intro",
+            "url": "channel.mp4"
+        })
+        final_playlist.append(movie)
+
     # Overwrite play.json with the new selection
-    save_play_movies(selected_movies)
-    print("Updated play.json with 5 new movies.")
+    save_play_movies(final_playlist)
+    print("Updated play.json with 5 new movies, each preceded by 'channel.mp4'.")
 
 if __name__ == "__main__":
     update_play_json()
