@@ -7,6 +7,7 @@ import time
 PLAY_FILE = "play.json"
 RTMP_URL = os.getenv("RTMP_URL")  # Get RTMP_URL from GitHub Secret
 OVERLAY = os.path.abspath("overlay.png")  # Use absolute path for overlay
+CHANNEL_MP4 = "channel.mp4"  # Local channel file
 MAX_RETRIES = 3  # Retry attempts if no movies are found
 RETRY_DELAY = 60  # Time (seconds) before retrying if no movies are found
 
@@ -22,6 +23,10 @@ if not os.path.exists(PLAY_FILE):
 
 if not os.path.exists(OVERLAY):
     print(f"❌ ERROR: Overlay image '{OVERLAY}' not found!")
+    exit(1)
+
+if not os.path.exists(CHANNEL_MP4):
+    print(f"❌ ERROR: Required file '{CHANNEL_MP4}' is missing! Please add it to the directory.")
     exit(1)
 
 def load_movies():
