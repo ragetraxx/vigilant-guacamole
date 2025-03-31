@@ -25,7 +25,7 @@ if not os.path.exists(OVERLAY):
 def load_movies():
     """Load movies from play.json."""
     try:
-        with open(PLAY_FILE, "r") as f:
+        with open(PLAY_FILE, "r", encoding="utf-8") as f:
             movies = json.load(f)
             if not movies:
                 print("❌ ERROR: play.json is empty!")
@@ -34,6 +34,12 @@ def load_movies():
     except json.JSONDecodeError:
         print("❌ ERROR: Failed to parse play.json!")
         return []
+
+def resolve_url(url):
+    """Resolve local file paths for streaming."""
+    if url.startswith("/"):
+        return os.path.abspath(url[1:])  # Convert "/channel.mp4" to absolute path
+    return url
 
 def stream_movie(movie):
     """Stream a single movie with reduced buffering."""
@@ -44,6 +50,7 @@ def stream_movie(movie):
         print(f"❌ ERROR: Missing URL for movie '{title}'")
         return
 
+    url = resolve_url(url)
     overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')
 
     command = [
@@ -80,12 +87,9 @@ def stream_movie(movie):
 
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # ✅ Prevent blocking, handle output properly
         stdout, stderr = process.communicate()
         if stderr:
             print(stderr)
-
     except Exception as e:
         print(f"❌ ERROR: FFmpeg failed for '{title}' - {str(e)}")
 
@@ -102,7 +106,7 @@ def main():
             time.sleep(RETRY_DELAY)
             continue
 
-        retry_attempts = 0  
+        retry_attempts = 0  # Reset retry attempts on successful load
 
         while True:
             for movie in movies:
