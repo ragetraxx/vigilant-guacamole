@@ -40,7 +40,7 @@ def update_play_json():
             "image": "https://example.com/channel.jpg",
             "category": "Channel Intro",
             "title": "Channel Intro",
-            "url": "/channel.mp4"
+            "url": "https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/1d8a3e3e36bce6b881e741933f61d9cf8ffe545f/channel.mp4"
         })
         final_playlist.append(movie)
 
