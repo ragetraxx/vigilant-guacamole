@@ -1,6 +1,12 @@
+# Ignore all video files
 *.mp4
 *.avi
 *.mov
 *.flv
 *.mkv
+
+# Allow channel.mp4 (if needed)
+!channel.mp4
+
+# Ignore overlay image
 overlay.png
