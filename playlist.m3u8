@@ -1,0 +1,6 @@
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:-1,Channel
+https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/main/channel.mp4
+#EXT-X-ENDLIST
