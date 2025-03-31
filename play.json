@@ -1,62 +1,32 @@
 [
     {
-        "image": "https://example.com/channel.jpg",
-        "category": "Channel Intro",
-        "title": "Channel Intro",
-        "url": "https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/1d8a3e3e36bce6b881e741933f61d9cf8ffe545f/channel.mp4"
-    },
-    {
-        "image": "https://image.tmdb.org/t/p/original/9dTO2RygcDT0cQkawABw4QkDegN.jpg",
+        "image": "https://image.tmdb.org/t/p/original/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg",
         "category": "Film Library",
-        "title": "Shin Kamen Rider (2023)",
-        "url": "https://gstream.hollymoviehd.cc/streamsvr/z6PxtBwttG/0-0?e=UTNBS2wwV0Q2OXFKcmp4MzQxTFVpK1FIMm1DeWpiVkxBYWVIa3FoMzM5Zz0U"
+        "title": "Guardians of the Galaxy Vol. 3 (2023)",
+        "url": "https://gstream.hollymoviehd.cc/streamsvr/ZoUwKipuPp/0-3?e=VE91TnZwSVNob1hsZVNZWnk3aFBrTm1ZbzVnU2Y1ZU5VTkIzN3o2UWJJVT0A"
     },
     {
-        "image": "https://example.com/channel.jpg",
-        "category": "Channel Intro",
-        "title": "Channel Intro",
-        "url": "https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/1d8a3e3e36bce6b881e741933f61d9cf8ffe545f/channel.mp4"
-    },
-    {
-        "image": "https://image.tmdb.org/t/p/original/kdPMUMJzyYAc4roD52qavX0nLIC.jpg",
+        "image": "https://image.tmdb.org/t/p/original/hnzXoDaK346U4ByfvQenu2DZnTg.jpg",
         "category": "Film Library",
-        "title": "Talk to Me (2023)",
-        "url": "https://gstream.hollymoviehd.cc/streamsvr/gpGhAXkV-C/0-1?e=ZVRydVNQM1I0QlBtaklRTlpEN2g3a2U3eCtybFU4YkVmUy9RMmhwc1pLbz0E"
+        "title": "They Cloned Tyrone (2023)",
+        "url": "https://gstream.hollymoviehd.cc/streamsvr/VdsQTQE04B/0-0?e=cFYwSWowZG9KMjFHWmJDZzNyYUkxWGZNcFFLb3Fjejd1Myt6M29La3FoUT0U"
     },
     {
-        "image": "https://example.com/channel.jpg",
-        "category": "Channel Intro",
-        "title": "Channel Intro",
-        "url": "https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/1d8a3e3e36bce6b881e741933f61d9cf8ffe545f/channel.mp4"
-    },
-    {
-        "image": "https://image.tmdb.org/t/p/original/mcz8oi9oCgq1wkA3Wz2kluE94pE.jpg",
+        "image": "https://image.tmdb.org/t/p/original/4yFG6cSPaCaPhyJ1vtGOtMD1lgh.jpg",
         "category": "Film Library",
-        "title": "Mob Land (2023)",
-        "url": "https://gstream.hollymoviehd.cc/streamsvr/quURzE-wd8/0-2?e=MkdiMGJ2bWdZQ252Vmp1ZGpwVjhjblZ2ZGZmZmxLVkgwM20xRDRWMHlXTT0I"
+        "title": "The Banshees of Inisherin (2022)",
+        "url": "https://gstream.hollymoviehd.cc/streamsvr/Ex108P8H7f/0-2?e=L1E4dEgwRHZQeTYraGYzWVIzTXJ3RDJ4cTVXMDlYQWx1VldsRkwxWE9vTT0O"
     },
     {
-        "image": "https://example.com/channel.jpg",
-        "category": "Channel Intro",
-        "title": "Channel Intro",
-        "url": "https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/1d8a3e3e36bce6b881e741933f61d9cf8ffe545f/channel.mp4"
-    },
-    {
-        "image": "https://image.tmdb.org/t/p/original/68jNkFi61MQjrJEqj2up5wZ4w5R.jpg",
+        "image": "https://image.tmdb.org/t/p/original/vjAMj81oYBryzGBhJk4gcK0M636.jpg",
         "category": "Film Library",
-        "title": "Hijack 1971 (2024)",
-        "url": "https://gstream.hollymoviehd.cc/streamsvr/sTxfiFcxE5/0-3?e=RkVEZ01DR1Jtd2dzZGtSa0F3Rkg4MUlTSFVIa0lRSUV2QzVuRjNzazVCcz0I"
+        "title": "Marlowe (2023)",
+        "url": "https://gstream.hollymoviehd.cc/streamsvr/gfnMTXwRGm/0-4?e=ZW5sL0lNNWR0RkpneUliMVhnNm1MN0lJOWROOE5zU3I3TVFGcU5mc1JmVT0I"
     },
     {
-        "image": "https://example.com/channel.jpg",
-        "category": "Channel Intro",
-        "title": "Channel Intro",
-        "url": "https://raw.githubusercontent.com/ragetraxx/vigilant-guacamole/1d8a3e3e36bce6b881e741933f61d9cf8ffe545f/channel.mp4"
-    },
-    {
-        "image": "https://image.tmdb.org/t/p/original/mwzDApMZAGeYCEVjhegKvCzDX0W.jpg",
+        "image": "https://image.tmdb.org/t/p/original/dbhk3PV7TmaL0FcelsArLFW0rRO.jpg",
         "category": "Film Library",
-        "title": "Cleaner (2025)",
-        "url": "https://gstream.hollymoviehd.cc/streamsvr/ipyHWPBjYB/0-0?e=bERITmV5NnJLVWhLSDRXSTVLTlNIaU4wOGRrU1VDWTBKRm9TU1VGaldKcz0U"
+        "title": "20th Century Girl (2022)",
+        "url": "https://gstream.hollymoviehd.cc/streamsvr/9qsSai9vvw/0-5?e=bkJibW5EaFo5eUx2UGE5QlBvVk9hL1BpSWF0NUlrUW5Kc29GZDd5Vng1ST0A"
     }
 ]
