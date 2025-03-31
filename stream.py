@@ -5,28 +5,21 @@ import time
 
 # ✅ Configuration
 PLAY_FILE = "play.json"
-RTMP_URL = os.getenv("RTMP_URL")  # Get RTMP_URL from GitHub Secret
-OVERLAY = os.path.abspath("overlay.png")  # Use absolute path for overlay
-CHANNEL_MP4 = "channel.mp4"  # Local channel file
-MAX_RETRIES = 3  # Retry attempts if no movies are found
-RETRY_DELAY = 60  # Time (seconds) before retrying if no movies are found
+RTMP_URL = os.getenv("RTMP_URL")
+OVERLAY = os.path.abspath("overlay.png")
+MAX_RETRIES = 3
+RETRY_DELAY = 60
 
-# ✅ Check if RTMP_URL is set
 if not RTMP_URL:
-    print("❌ ERROR: RTMP_URL environment variable is NOT set! Check GitHub Secrets.")
+    print("❌ ERROR: RTMP_URL environment variable is NOT set!")
     exit(1)
 
-# ✅ Ensure required files exist
 if not os.path.exists(PLAY_FILE):
     print(f"❌ ERROR: {PLAY_FILE} not found!")
     exit(1)
 
 if not os.path.exists(OVERLAY):
     print(f"❌ ERROR: Overlay image '{OVERLAY}' not found!")
-    exit(1)
-
-if not os.path.exists(CHANNEL_MP4):
-    print(f"❌ ERROR: Required file '{CHANNEL_MP4}' is missing! Please add it to the directory.")
     exit(1)
 
 def load_movies():
@@ -39,11 +32,11 @@ def load_movies():
                 return []
             return movies
     except json.JSONDecodeError:
-        print("❌ ERROR: Failed to parse play.json! Check for syntax errors.")
+        print("❌ ERROR: Failed to parse play.json!")
         return []
 
 def stream_movie(movie):
-    """Stream a single movie using FFmpeg and wait for it to finish."""
+    """Stream a single movie with reduced buffering."""
     title = movie.get("title", "Unknown Title")
     url = movie.get("url")
 
@@ -57,20 +50,20 @@ def stream_movie(movie):
         "ffmpeg",
         "-re",
         "-fflags", "+genpts",
-        "-rtbufsize", "8M",  # ✅ Lower buffer to prevent excess latency
-        "-probesize", "32M",
-        "-analyzeduration", "32M",
+        "-rtbufsize", "4M",  # ✅ Lower buffer for less latency
+        "-probesize", "16M",  # ✅ Faster start
+        "-analyzeduration", "16M",
         "-i", url,
         "-i", OVERLAY,
         "-filter_complex",
-        "[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"  # ✅ Correct overlay positioning
+        "[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,"  
         f"drawtext=text='{overlay_text}':fontcolor=white:fontsize=20:x=30:y=30",
         "-c:v", "libx264",
         "-preset", "ultrafast",
         "-tune", "zerolatency",
-        "-crf", "18",  # ✅ Balanced quality & performance
-        "-maxrate", "5000k",  # ✅ Adjusted for stability
-        "-bufsize", "6000k",  # ✅ Reduced to avoid long buffering
+        "-crf", "18",
+        "-maxrate", "5000k",
+        "-bufsize", "4000k",  # ✅ Further reduced buffer
         "-pix_fmt", "yuv420p",
         "-g", "60",
         "-r", "30",
@@ -80,19 +73,18 @@ def stream_movie(movie):
         "-movflags", "+faststart",
         "-f", "flv",
         RTMP_URL,
-        "-loglevel", "error",  # ✅ Show only errors, not all logs
+        "-loglevel", "error",
     ]
 
     print(f"🎬 Now Streaming: {title}")
-    
+
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-        # ✅ Wait for FFmpeg to finish before playing the next movie
-        for line in process.stderr:
-            print(line, end="")
-
-        process.wait()
+        
+        # ✅ Prevent blocking, handle output properly
+        stdout, stderr = process.communicate()
+        if stderr:
+            print(stderr)
 
     except Exception as e:
         print(f"❌ ERROR: FFmpeg failed for '{title}' - {str(e)}")
@@ -110,11 +102,11 @@ def main():
             time.sleep(RETRY_DELAY)
             continue
 
-        retry_attempts = 0  # Reset retry counter on success
+        retry_attempts = 0  
 
         while True:
             for movie in movies:
-                stream_movie(movie)  # ✅ This will now wait for each movie to finish before starting the next one
+                stream_movie(movie)
                 print("🔄 Movie ended. Playing next movie...")
 
             print("🔄 All movies played, restarting from the beginning...")
