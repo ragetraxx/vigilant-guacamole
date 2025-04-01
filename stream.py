@@ -23,6 +23,42 @@ if not os.path.exists(OVERLAY):
     print(f"❌ ERROR: Overlay image '{OVERLAY}' not found!")
     exit(1)
 
+def get_video_properties(url):
+    """Get video properties like frame rate, codec, and bitrate using FFmpeg."""
+    command = [
+        "ffmpeg",
+        "-i", url,
+        "-hide_banner"
+    ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        # Parsing output to find video information
+        output = result.stderr
+        frame_rate = None
+        codec = None
+        bitrate = None
+
+        # Extract frame rate (e.g., 23.976)
+        if "fps" in output:
+            frame_rate_line = next(line for line in output.splitlines() if "fps" in line)
+            frame_rate = float(frame_rate_line.split()[1])
+
+        # Extract codec (e.g., h264)
+        if "Video:" in output:
+            codec_line = next(line for line in output.splitlines() if "Video:" in line)
+            codec = codec_line.split()[2]
+
+        # Extract bitrate (if available)
+        if "bitrate:" in output:
+            bitrate_line = next(line for line in output.splitlines() if "bitrate:" in line)
+            bitrate = int(bitrate_line.split()[1].replace('k', '000'))  # Convert k to proper value
+
+        return frame_rate, codec, bitrate
+
+    except subprocess.CalledProcessError as e:
+        print(f"❌ ERROR: Failed to retrieve video properties: {e}")
+        return None, None, None
+
 def load_movies():
     """Load movies from play.json."""
     try:
@@ -42,15 +78,29 @@ def stream_movie(movie):
         print(f"❌ ERROR: Missing URL for movie '{title}'")
         return None
 
+    # Get video properties (frame rate, codec, bitrate)
+    frame_rate, codec, bitrate = get_video_properties(url)
+
+    if not frame_rate or not codec:
+        print(f"❌ ERROR: Could not retrieve valid video properties for '{title}'")
+        return None
+
     overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')
+
+    # Dynamic GOP size based on frame rate
+    gop_size = int(frame_rate * 2)
+
+    # Default buffer size and bitrate handling for dynamic sources
+    max_rate = bitrate if bitrate else 3000 * 1000  # Use bitrate from source if available, else fallback
+    buffer_size = max_rate * 2  # Typically double the maxrate for buffer size
 
     command = [
         "ffmpeg",
         "-re",
         "-fflags", "+genpts",
-        "-rtbufsize", "4M",  # ✅ Smaller buffer to minimize latency
-        "-probesize", "16M",  # ✅ Reduced for faster startup
-        "-analyzeduration", "16M",
+        "-rtbufsize", "2M",  # ✅ Smaller buffer to minimize latency
+        "-probesize", "1M",  # ✅ Reduced for faster startup
+        "-analyzeduration", "2M",
         "-i", url,
         "-i", OVERLAY,
         "-filter_complex",
@@ -60,11 +110,11 @@ def stream_movie(movie):
         "-preset", "superfast",  # ✅ Lower latency than ultrafast
         "-tune", "zerolatency",
         "-crf", "22",  # ✅ Slightly lower quality for stability
-        "-maxrate", "4000k",
-        "-bufsize", "4000k",  # ✅ Reduced to prevent long buffering
+        "-maxrate", f"{max_rate}",  # ✅ Dynamic bitrate based on source
+        "-bufsize", f"{buffer_size}",  # ✅ Buffer size adjusted based on bitrate
         "-pix_fmt", "yuv420p",
-        "-g", "30",
-        "-r", "30",
+        "-g", f"{gop_size}",  # ✅ GOP size dynamically set based on frame rate
+        "-r", f"{frame_rate}",  # ✅ Use the detected frame rate from the video
         "-c:a", "aac",
         "-b:a", "128k",
         "-ar", "44100",
