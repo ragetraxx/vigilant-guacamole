@@ -74,7 +74,7 @@ def stream_movie(movie):
     "-f", "flv",  # Format for RTMP
     RTMP_URL,  # RTMP URL for streaming
     "-loglevel", "info",  # Set log level for debugging and detailed logs
-]
+    ]
 
     print(f"🎬 Now Streaming: {title}")
     
