@@ -52,9 +52,9 @@ def stream_movie(movie):
     command = [
     "ffmpeg",
     "-fflags", "+genpts",
-    "-rtbufsize", "128M",  # Increased buffer size to handle high bitrates and prevent interruptions
-    "-probesize", "128M",  # Increased probing size to ensure better handling of the stream
-    "-analyzeduration", "128M",  # Increased analysis duration to avoid initial buffering
+    "-rtbufsize", "256M",  # Further increased buffer size to handle larger streams
+    "-probesize", "128M",  # Larger probing size to ensure better handling of video streams
+    "-analyzeduration", "128M",  # Increased analysis duration to improve stream handling
     "-i", url,  # The video URL
     "-i", OVERLAY,  # Overlay image
     "-filter_complex",
@@ -63,18 +63,18 @@ def stream_movie(movie):
     "-c:v", "libx264",  # Use x264 codec for video
     "-preset", "fast",  # Speed optimization for streaming
     "-tune", "film",  # Tuned for film content, if you're streaming movies
-    "-b:v", "2000k",  # Video bitrate, adjust depending on available bandwidth
-    "-maxrate", "2500k",  # Max video bitrate, ensure this doesn't exceed your network capacity
-    "-bufsize", "5000k",  # Buffer size for smooth streaming, should be higher than maxrate
+    "-b:v", "3000k",  # Increased video bitrate to match stream requirements
+    "-maxrate", "3500k",  # Increased max rate to ensure consistency in video delivery
+    "-bufsize", "6000k",  # Larger buffer size to handle streaming fluctuations
     "-pix_fmt", "yuv420p",  # Pixel format for compatibility
-    "-g", "30",  # Lower GOP size (keyframe interval) for better streaming continuity
+    "-g", "25",  # Reduced GOP size for more frequent keyframes
     "-c:a", "aac",  # Audio codec
     "-b:a", "192k",  # Audio bitrate
     "-ar", "48000",  # Audio sample rate
     "-f", "flv",  # Format for RTMP
     RTMP_URL,  # RTMP URL for streaming
     "-loglevel", "info",  # Set log level for debugging and detailed logs
-    ]
+]
 
     print(f"🎬 Now Streaming: {title}")
     
