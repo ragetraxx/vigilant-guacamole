@@ -47,7 +47,7 @@ def stream_movie(movie):
         return
 
     overlay_text = title.replace(":", r"\:").replace("'", r"\'").replace('"', r'\"')\
-                    .replace("&", r"\&").replace("%", r"\%").replace("(", r"").replace(")", r"")
+                    .replace("&", r"\&").replace("%", r"\%").replace("(", r"\(").replace(")", r"\)")
     
     command = [
     "ffmpeg",
