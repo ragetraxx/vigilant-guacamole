@@ -5,14 +5,15 @@ import time
 
 # ✅ Configuration
 PLAY_FILE = "play.json"
-RTMP_URL = os.getenv("RTMP_URL")
 OVERLAY = os.path.abspath("overlay.png")
 RETRY_DELAY = 60
-DEBUG = True  # Set to False to suppress FFmpeg logs
+DEBUG = True
 
-# ✅ Check if RTMP_URL is set
-if not RTMP_URL:
-    print("❌ ERROR: RTMP_URL environment variable is NOT set!")
+# ✅ Load stream URL from GitHub secret or local env
+STREAM_URL = os.getenv("STREAM_URL")
+
+if not STREAM_URL:
+    print("❌ ERROR: STREAM_URL environment variable not set!")
     exit(1)
 
 # ✅ Ensure required files exist
@@ -28,27 +29,28 @@ def load_movies():
     try:
         with open(PLAY_FILE, "r") as f:
             movies = json.load(f)
-        if not movies:
-            print("❌ ERROR: No movies found in play.json!")
-            return []
-        return movies
+        return movies if movies else []
     except Exception as e:
-        print(f"❌ ERROR: Failed to load {PLAY_FILE} - {str(e)}")
+        print(f"❌ Failed to load {PLAY_FILE}: {e}")
         return []
 
 def escape_drawtext(text):
     return text.replace('\\', '\\\\\\\\').replace(':', '\\:').replace("'", "\\'")
+
+def detect_format(url):
+    return "mpegts" if url.startswith("srt://") else "flv"
 
 def stream_movie(movie):
     title = movie.get("title", "Unknown Title")
     url = movie.get("url")
 
     if not url:
-        print(f"❌ ERROR: Missing URL for movie '{title}'")
+        print(f"❌ Missing URL for '{title}'")
         return
 
     overlay_text = escape_drawtext(title)
     font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    output_format = detect_format(STREAM_URL)
 
     filter_complex = (
         f"[0:v][1:v]scale2ref[v0][v1];"
@@ -58,48 +60,34 @@ def stream_movie(movie):
 
     command = [
         "ffmpeg", "-re", "-i", url, "-i", OVERLAY, "-filter_complex", filter_complex,
-        "-c:v", "libx264", "-profile:v", "main", "-preset", "veryfast", "-tune", "zerolatency",
-        "-b:v", "2800k", "-maxrate", "2800k", "-bufsize", "4000k", "-pix_fmt", "yuv420p", "-g", "50", "-vsync", "cfr",
-        "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-f", "flv", "-rtmp_live", "live", RTMP_URL
+        "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
+        "-b:v", "2800k", "-bufsize", "4000k", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+        "-f", output_format, STREAM_URL
     ]
 
-    print(f"\n🎬 Now Streaming: {title}")
-    print(f"▶️ URL: {url}")
+    print(f"\n🎬 Now Streaming: {title}\n▶️ Source URL: {url}\n📡 Output: {STREAM_URL} ({output_format})")
 
     try:
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
-
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for line in process.stdout:
             if DEBUG:
                 print(line, end="")
-
         process.wait()
-
-        if process.returncode != 0:
-            print(f"⚠️ FFmpeg exited with code {process.returncode}")
-
     except Exception as e:
-        print(f"❌ ERROR: Streaming failed for '{title}' - {str(e)}")
+        print(f"❌ FFmpeg failed for '{title}': {e}")
 
 def main():
     while True:
         movies = load_movies()
-
         if not movies:
-            print(f"⏳ Waiting for valid movie list... retrying in {RETRY_DELAY} sec.")
+            print(f"⏳ No movies found. Retrying in {RETRY_DELAY}s...")
             time.sleep(RETRY_DELAY)
             continue
-
         for movie in movies:
             stream_movie(movie)
-            print("🔁 Movie ended or failed. Moving to next...\n")
-            time.sleep(2)  # Optional: brief pause between streams
+            print("🔁 Stream ended. Next...\n")
+            time.sleep(2)
 
 if __name__ == "__main__":
     main()
