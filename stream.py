@@ -9,11 +9,11 @@ OVERLAY = os.path.abspath("overlay.png")
 RETRY_DELAY = 60
 DEBUG = True
 
-# ✅ Load stream URL from GitHub secret or local env
-STREAM_URL = os.getenv("STREAM_URL")
+# ✅ Load SRT URL from GitHub secret or environment variable
+STREAM_URL = os.getenv("SRT_URL")
 
 if not STREAM_URL:
-    print("❌ ERROR: STREAM_URL environment variable not set!")
+    print("❌ ERROR: SRT_URL environment variable is NOT set!")
     exit(1)
 
 # ✅ Ensure required files exist
@@ -26,6 +26,7 @@ if not os.path.exists(OVERLAY):
     exit(1)
 
 def load_movies():
+    """Load all movies from play.json."""
     try:
         with open(PLAY_FILE, "r") as f:
             movies = json.load(f)
@@ -35,12 +36,11 @@ def load_movies():
         return []
 
 def escape_drawtext(text):
+    """Escape only necessary characters for FFmpeg drawtext."""
     return text.replace('\\', '\\\\\\\\').replace(':', '\\:').replace("'", "\\'")
 
-def detect_format(url):
-    return "mpegts" if url.startswith("srt://") else "flv"
-
 def stream_movie(movie):
+    """Stream a single movie using FFmpeg."""
     title = movie.get("title", "Unknown Title")
     url = movie.get("url")
 
@@ -50,23 +50,17 @@ def stream_movie(movie):
 
     overlay_text = escape_drawtext(title)
     font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    output_format = detect_format(STREAM_URL)
-
-    filter_complex = (
-        f"[0:v][1:v]scale2ref[v0][v1];"
-        f"[v0][v1]overlay=0:0,"
-        f"drawtext=fontfile={font_path}:text='{overlay_text}':fontcolor=white:fontsize=20:x=30:y=30"
-    )
 
     command = [
-        "ffmpeg", "-re", "-i", url, "-i", OVERLAY, "-filter_complex", filter_complex,
+        "ffmpeg", "-re", "-i", url, "-i", OVERLAY, "-filter_complex",
+        f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,drawtext=fontfile={font_path}:text='{overlay_text}':fontcolor=white:fontsize=20:x=30:y=30",
         "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
         "-b:v", "2800k", "-bufsize", "4000k", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
-        "-f", output_format, STREAM_URL
+        "-f", "mpegts", STREAM_URL  # Using MPEG-TS for SRT streaming
     ]
 
-    print(f"\n🎬 Now Streaming: {title}\n▶️ Source URL: {url}\n📡 Output: {STREAM_URL} ({output_format})")
+    print(f"\n🎬 Now Streaming: {title}\n▶️ Source URL: {url}\n📡 Output: {STREAM_URL}")
 
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
