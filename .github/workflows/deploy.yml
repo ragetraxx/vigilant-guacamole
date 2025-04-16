@@ -51,20 +51,20 @@ jobs:
 
       - name: Debug Secrets
         run: |
-          echo "Checking if SRT_URL is set..."
-          if [ -z "${{ secrets.SRT_URL }}" ]; then
-            echo "❌ ERROR: SRT_URL is NOT set!"
+          echo "Checking if RTMP_URL is set..."
+          if [ -z "${{ secrets.RTMP_URL }}" ]; then
+            echo "❌ ERROR: RTMP_URL is NOT set!"
             exit 1
           else
-            echo "✅ SRT_URL is set."
+            echo "✅ RTMP_URL is set."
           fi
 
       - name: Delay Before Streaming
-        run: sleep 5  # Prevents stream throttling
+        run: sleep 5  # Prevents RTMP throttling
 
       - name: Run live stream script (stream.py)
         env:
-          SRT_URL: ${{ secrets.SRT_URL }}
+          RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
-          export SRT_URL=${{ secrets.SRT_URL }}
+          export RTMP_URL=${{ secrets.RTMP_URL }}
           python3 stream.py
