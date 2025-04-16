@@ -1,23 +1,20 @@
-name: Play JSON Update & Live Stream Deployment (SRT Only)
+name: Play JSON Update & Live Stream Deployment
 
 on:
   push:
     branches:
       - main
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *"  # Runs every 6 hours
   workflow_dispatch:
 
 concurrency:
   group: play-json-deploy
-  cancel-in-progress: false
+  cancel-in-progress: false  # Ensures only one workflow runs at a time without canceling in-progress runs
 
 jobs:
   update-and-deploy:
     runs-on: ubuntu-latest
-
-    env:
-      STREAM_URL: ${{ secrets.SRT_URL }}
 
     steps:
       - name: Checkout Repository
@@ -30,42 +27,44 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install Python Dependencies
-        run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install Dependencies
+        run: pip install -r requirements.txt  # Ensure all dependencies are installed
 
       - name: Pull Latest Changes
-        run: git pull --rebase origin main
+        run: git pull --rebase origin main  # Ensures no conflicts before committing
 
-      - name: Run Movie Update Script (play.py)
-        run: |
-          if [ -f play.py ]; then python3 play.py; fi
+      - name: Run Script (play.py)
+        run: python3 play.py
 
       - name: Commit and Push Changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add play.json
-          git commit -m "Updated play.json - $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
+          git commit -m "Updated play.json with new movies - $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
           git push
 
-      - name: Install FFmpeg
+      - name: Install FFmpeg (Full Version)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu libavcodec-extra
+          sudo apt-get install -y ffmpeg libavcodec-extra
 
-      - name: Validate SRT Secret
+      - name: Debug Secrets
         run: |
-          echo "Checking SRT_URL..."
-          if [ -z "${STREAM_URL}" ]; then
-            echo "❌ ERROR: SRT_URL is not set in secrets!"
+          echo "Checking if SRT_URL is set..."
+          if [ -z "${{ secrets.SRT_URL }}" ]; then
+            echo "❌ ERROR: SRT_URL is NOT set!"
             exit 1
           else
             echo "✅ SRT_URL is set."
           fi
 
-      - name: Wait Before Streaming
-        run: sleep 5
+      - name: Delay Before Streaming
+        run: sleep 5  # Prevents stream throttling
 
-      - name: Start Streaming (SRT)
-        run: python3 stream.py
+      - name: Run live stream script (stream.py)
+        env:
+          SRT_URL: ${{ secrets.SRT_URL }}
+        run: |
+          export SRT_URL=${{ secrets.SRT_URL }}
+          python3 stream.py
