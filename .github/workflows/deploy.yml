@@ -10,11 +10,14 @@ on:
 
 concurrency:
   group: play-json-deploy
-  cancel-in-progress: false  # Ensures only one workflow runs at a time without canceling in-progress runs
+  cancel-in-progress: false
 
 jobs:
   update-and-deploy:
     runs-on: ubuntu-latest
+
+    env:
+      STREAM_URL: ${{ secrets.RTMP_URL }}
 
     steps:
       - name: Checkout Repository
@@ -27,14 +30,16 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install Dependencies
-        run: pip install -r requirements.txt  # Ensure all dependencies are installed
+      - name: Install Python Dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Pull Latest Changes
-        run: git pull --rebase origin main  # Ensures no conflicts before committing
+        run: git pull --rebase origin main
 
-      - name: Run Script (play.py)
-        run: python3 play.py
+      - name: Run Movie Update Script (play.py)
+        run: |
+          if [ -f play.py ]; then python3 play.py; fi
 
       - name: Commit and Push Changes
         run: |
@@ -47,24 +52,22 @@ jobs:
       - name: Install FFmpeg (Full Version)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg libavcodec-extra
+          sudo apt-get install -y ffmpeg fonts-dejavu libavcodec-extra
 
-      - name: Debug Secrets
+      - name: Validate RTMP/SRT Secret
         run: |
-          echo "Checking if RTMP_URL is set..."
-          if [ -z "${{ secrets.RTMP_URL }}" ]; then
-            echo "❌ ERROR: RTMP_URL is NOT set!"
+          echo "Checking STREAM_URL..."
+          if [ -z "${STREAM_URL}" ]; then
+            echo "❌ ERROR: STREAM_URL is not set in secrets as RTMP_URL"
             exit 1
           else
-            echo "✅ RTMP_URL is set."
+            echo "✅ STREAM_URL is set."
           fi
 
       - name: Delay Before Streaming
-        run: sleep 5  # Prevents RTMP throttling
+        run: sleep 5
 
-      - name: Run live stream script (stream.py)
-        env:
-          RTMP_URL: ${{ secrets.RTMP_URL }}
+      - name: Start Live Stream (stream.py)
         run: |
-          export RTMP_URL=${{ secrets.RTMP_URL }}
+          echo "Launching stream.py..."
           python3 stream.py
