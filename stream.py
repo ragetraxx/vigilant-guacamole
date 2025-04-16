@@ -5,15 +5,13 @@ import time
 
 # ✅ Configuration
 PLAY_FILE = "play.json"
+RTMP_URL = os.getenv("RTMP_URL")
 OVERLAY = os.path.abspath("overlay.png")
 RETRY_DELAY = 60
-DEBUG = True
 
-# ✅ Load SRT URL from GitHub secret or environment variable
-STREAM_URL = os.getenv("SRT_URL")
-
-if not STREAM_URL:
-    print("❌ ERROR: SRT_URL environment variable is NOT set!")
+# ✅ Check if RTMP_URL is set
+if not RTMP_URL:
+    print("❌ ERROR: RTMP_URL environment variable is NOT set! Check configuration.")
     exit(1)
 
 # ✅ Ensure required files exist
@@ -30,13 +28,16 @@ def load_movies():
     try:
         with open(PLAY_FILE, "r") as f:
             movies = json.load(f)
-        return movies if movies else []
-    except Exception as e:
-        print(f"❌ Failed to load {PLAY_FILE}: {e}")
+        if not movies:
+            print("❌ ERROR: No movies found in play.json!")
+            return []
+        return movies
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"❌ ERROR: Failed to load {PLAY_FILE} - {str(e)}")
         return []
 
 def escape_drawtext(text):
-    """Escape only necessary characters for FFmpeg drawtext."""
+    """Escape only necessary characters for FFmpeg drawtext without showing visible backslashes."""
     return text.replace('\\', '\\\\\\\\').replace(':', '\\:').replace("'", "\\'")
 
 def stream_movie(movie):
@@ -45,69 +46,47 @@ def stream_movie(movie):
     url = movie.get("url")
 
     if not url:
-        print(f"❌ Missing URL for '{title}'")
+        print(f"❌ ERROR: Missing URL for movie '{title}'")
         return
 
     overlay_text = escape_drawtext(title)
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
     command = [
-        "ffmpeg",
-        "-fflags", "nobuffer",
-        "-flags", "low_delay",
-        "-strict", "experimental",
-        "-probesize", "32",
-        "-analyzeduration", "0",
-        "-rw_timeout", "10000000",
-        "-timeout", "10000000",
-        "-reconnect", "1",
-        "-reconnect_streamed", "1",
-        "-reconnect_delay_max", "2",
-        "-re", "-i", url,
-        "-i", OVERLAY,
-        "-filter_complex",
-        f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,drawtext=fontfile={font_path}:text='{overlay_text}':fontcolor=white:fontsize=20:x=30:y=30",
-        "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-tune", "zerolatency",
-        "-b:v", "2800k",
-        "-bufsize", "0",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        "-b:a", "128k",
-        "-ar", "44100",
-        "-f", "mpegts",
-        STREAM_URL
+        "ffmpeg", "-re", "-fflags", "nobuffer", "-i", url, "-i", OVERLAY, "-filter_complex",
+        f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,drawtext=text='{overlay_text}':fontcolor=white:fontsize=20:x=30:y=30",
+        "-c:v", "libx264", "-profile:v", "main", "-preset", "veryfast", "-tune", "zerolatency", "-b:v", "2800k",
+        "-maxrate", "2800k", "-bufsize", "4000k", "-pix_fmt", "yuv420p", "-g", "50", "-vsync", "cfr",
+        "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-f", "flv", "-rtmp_live", "live", RTMP_URL
     ]
 
-    print(f"\n🎬 Now Streaming: {title}\n▶️ Source URL: {url}\n📡 Output: {STREAM_URL}")
+    print(f"🎬 Now Streaming: {title}")
 
     try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        start = time.time()
-        for line in process.stdout:
-            if DEBUG:
-                print(line, end="")
-            # Kill if stuck too long (>300 seconds)
-            if "error" in line.lower() or (time.time() - start > 300):
-                print("❌ FFmpeg error or timeout. Skipping...")
-                process.kill()
-                break
+        process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+        for line in process.stderr:
+            print(line, end="")  # Optional: Log errors in real-time
         process.wait()
     except Exception as e:
-        print(f"❌ FFmpeg failed for '{title}': {e}")
+        print(f"❌ ERROR: FFmpeg failed for '{title}' - {str(e)}")
 
 def main():
+    """Continuously play movies from play.json in a loop."""
+    movies = load_movies()
+    
+    if not movies:
+        print(f"🔄 No movies found! Retrying in {RETRY_DELAY} seconds...")
+        time.sleep(RETRY_DELAY)
+        return main()
+
+    index = 0  # Track current movie index
+
     while True:
-        movies = load_movies()
-        if not movies:
-            print(f"⏳ No movies found. Retrying in {RETRY_DELAY}s...")
-            time.sleep(RETRY_DELAY)
-            continue
-        for movie in movies:
-            stream_movie(movie)
-            print("🔁 Stream ended. Next...\n")
-            time.sleep(2)
+        movie = movies[index]
+        stream_movie(movie)
+
+        # Move to the next movie, looping back if at the end
+        index = (index + 1) % len(movies)
+        print("🔄 Movie ended. Playing next movie...")
 
 if __name__ == "__main__":
     main()
