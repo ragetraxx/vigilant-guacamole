@@ -26,6 +26,7 @@ if not os.path.exists(OVERLAY):
     exit(1)
 
 def load_movies():
+    """Load all movies from play.json."""
     try:
         with open(PLAY_FILE, "r") as f:
             movies = json.load(f)
@@ -35,9 +36,11 @@ def load_movies():
         return []
 
 def escape_drawtext(text):
+    """Escape only necessary characters for FFmpeg drawtext."""
     return text.replace('\\', '\\\\\\\\').replace(':', '\\:').replace("'", "\\'")
 
 def stream_movie(movie):
+    """Stream a single movie using FFmpeg."""
     title = movie.get("title", "Unknown Title")
     url = movie.get("url")
 
@@ -53,8 +56,11 @@ def stream_movie(movie):
         "-fflags", "nobuffer",
         "-flags", "low_delay",
         "-strict", "experimental",
-        "-re",
-        "-i", url,
+        "-probesize", "32",
+        "-analyzeduration", "0",
+        "-rw_timeout", "15000000",
+        "-err_detect", "ignore_err",
+        "-re", "-i", url,
         "-i", OVERLAY,
         "-filter_complex",
         f"[0:v][1:v]scale2ref[v0][v1];[v0][v1]overlay=0:0,drawtext=fontfile={font_path}:text='{overlay_text}':fontcolor=white:fontsize=20:x=30:y=30",
