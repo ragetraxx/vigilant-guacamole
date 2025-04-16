@@ -58,8 +58,11 @@ def stream_movie(movie):
         "-strict", "experimental",
         "-probesize", "32",
         "-analyzeduration", "0",
-        "-rw_timeout", "15000000",
-        "-err_detect", "ignore_err",
+        "-rw_timeout", "10000000",
+        "-timeout", "10000000",
+        "-reconnect", "1",
+        "-reconnect_streamed", "1",
+        "-reconnect_delay_max", "2",
         "-re", "-i", url,
         "-i", OVERLAY,
         "-filter_complex",
@@ -81,9 +84,15 @@ def stream_movie(movie):
 
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        start = time.time()
         for line in process.stdout:
             if DEBUG:
                 print(line, end="")
+            # Kill if stuck too long (>300 seconds)
+            if "error" in line.lower() or (time.time() - start > 300):
+                print("❌ FFmpeg error or timeout. Skipping...")
+                process.kill()
+                break
         process.wait()
     except Exception as e:
         print(f"❌ FFmpeg failed for '{title}': {e}")
