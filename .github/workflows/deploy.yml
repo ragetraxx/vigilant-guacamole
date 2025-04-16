@@ -1,11 +1,11 @@
-name: Play JSON Update & Live Stream Deployment
+name: Play JSON Update & Live Stream Deployment (SRT Only)
 
 on:
   push:
     branches:
       - main
   schedule:
-    - cron: "0 */6 * * *"  # Runs every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      STREAM_URL: ${{ secrets.RTMP_URL }}
+      STREAM_URL: ${{ secrets.SRT_URL }}
 
     steps:
       - name: Checkout Repository
@@ -46,28 +46,26 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add play.json
-          git commit -m "Updated play.json with new movies - $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
+          git commit -m "Updated play.json - $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
           git push
 
-      - name: Install FFmpeg (Full Version)
+      - name: Install FFmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-dejavu libavcodec-extra
 
-      - name: Validate RTMP/SRT Secret
+      - name: Validate SRT Secret
         run: |
-          echo "Checking STREAM_URL..."
+          echo "Checking SRT_URL..."
           if [ -z "${STREAM_URL}" ]; then
-            echo "❌ ERROR: STREAM_URL is not set in secrets as RTMP_URL"
+            echo "❌ ERROR: SRT_URL is not set in secrets!"
             exit 1
           else
-            echo "✅ STREAM_URL is set."
+            echo "✅ SRT_URL is set."
           fi
 
-      - name: Delay Before Streaming
+      - name: Wait Before Streaming
         run: sleep 5
 
-      - name: Start Live Stream (stream.py)
-        run: |
-          echo "Launching stream.py..."
-          python3 stream.py
+      - name: Start Streaming (SRT)
+        run: python3 stream.py
