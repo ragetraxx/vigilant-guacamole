@@ -50,7 +50,7 @@ def stream_movie(movie):
         return
 
     overlay_text = escape_drawtext(title)
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    font_path = "DejaVuSans-Bold.ttf"
     
     command = [
         "ffmpeg", "-re", "-fflags", "nobuffer", "-i", url, "-i", OVERLAY, "-filter_complex",
